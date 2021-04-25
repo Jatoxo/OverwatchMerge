@@ -4,6 +4,7 @@
 
 globalvar MergeRange
 globalvar Debug
+globalvar EnableAi
 
 
 #Player variables
@@ -22,6 +23,7 @@ playervar MovementOverrider
 playervar RevealStack = false #Whether the hero stack is visible to the enemy
 
 
+
 rule "Merge v2 - Completely rewritten from scratch by Jatoxo            ~uwu":
     #The original was a complete mess with unnamed magic variables doing magic things. The gameplay was a glitch fest too. This rewrite is well documented and should provide a highly better experience
     @Condition false == true
@@ -30,6 +32,7 @@ rule "Merge v2 - Completely rewritten from scratch by Jatoxo            ~uwu":
 rule "Initialization":
     MergeRange = createWorkshopSetting(int[2:50], "General", "Merging Range (Meters)", 13, 0)
     Debug = createWorkshopSetting(bool, "Developer", "Debug mode", true, 0)
+    EnableAi = createWorkshopSetting(bool, "General", "Ai bots can merge", true, 0)
 
     
 rule "Match initialization":
@@ -40,9 +43,10 @@ rule "Match initialization":
         setMatchTime(0)
 
 
-
-
 #!include "targeting.opy"
+
+
+#!include "AiMerging.opy"
 
 
 #!include "mergeTriggers.opy"
@@ -177,7 +181,7 @@ rule "Update Host Icons/Hud":
 
                 #!define iconScale 2.5
                 #Create icon for every player
-                createInWorldText(getAllPlayers() if eventPlayer.RevealStack else getPlayers(eventPlayer.getTeam()), heroIcon(currentPlayer.getCurrentHero()), updateEveryTick(eventPlayer.getPosition()) + vect(0, 2 + 0.3 * i, 0), iconScale, Clip.SURFACES, WorldTextReeval.VISIBILITY_AND_POSITION, Color.WHITE, SpecVisibility.DEFAULT)
+                createInWorldText(getAllPlayers() if eventPlayer.RevealStack else getPlayers(eventPlayer.getTeam()), heroIcon(currentPlayer.getCurrentHero()), updateEveryTick(eventPlayer.getPosition()) + vect(0, 2 + 0.3 * evalOnce(i), 0), iconScale, Clip.SURFACES, WorldTextReeval.VISIBILITY_AND_POSITION, Color.WHITE, SpecVisibility.DEFAULT)
                 eventPlayer.StackedIcons.append(getLastCreatedText())
                 
                 if Debug:
