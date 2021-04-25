@@ -5,6 +5,8 @@ rule "Debug":
     @Hero all
     
     @Condition Debug
+    @Condition len(eventPlayer.AiCheck) != 2
+    @Condition eventPlayer.AiCheck == false
 
 
     hudHeader(eventPlayer, "Server Load: {0} %".format(getAverageServerLoad()), HudPosition.RIGHT, 0, rgb(255 * (getAverageServerLoad() / 100), 255 * (1 - getAverageServerLoad() / 100), 0), HudReeval.STRING_AND_COLOR, SpecVisibility.DEFAULT)
@@ -23,3 +25,5 @@ rule "Debug":
         hudHeader(eventPlayer, "Own Overrider: {0}".format(eventPlayer.MovementOverrider), HudPosition.TOP, 0, Color.WHITE, HudReeval.STRING, SpecVisibility.DEFAULT)
 
         hudHeader(eventPlayer, "Host Distance: {0}".format(distance(eventPlayer.getPosition(), eventPlayer.PlayerHost.getPosition())), HudPosition.TOP, 0, Color.WHITE, HudReeval.STRING, SpecVisibility.DEFAULT)
+
+
