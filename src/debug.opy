@@ -12,6 +12,7 @@ rule "Debug":
     hudHeader(eventPlayer, "Server Load: {0} %".format(getAverageServerLoad()), HudPosition.RIGHT, 0, rgb(255 * (getAverageServerLoad() / 100), 255 * (1 - getAverageServerLoad() / 100), 0), HudReeval.STRING_AND_COLOR, SpecVisibility.DEFAULT)
     hudHeader(eventPlayer, "Debug Mode is Acive!", HudPosition.RIGHT, 0, Color.YELLOW, HudReeval.STRING_AND_COLOR, SpecVisibility.DEFAULT)
 
+
     if eventPlayer == hostPlayer:
         hudHeader(eventPlayer, "Using Ability 1: {0}".format(eventPlayer.isUsingAbility1()), HudPosition.LEFT, 0, Color.WHITE, HudReeval.VISIBILITY_STRING_AND_COLOR, SpecVisibility.DEFAULT)
         hudHeader(eventPlayer, "Using Ability 2: {0}".format(eventPlayer.isUsingAbility2()), HudPosition.LEFT, 0, Color.WHITE, HudReeval.VISIBILITY_STRING_AND_COLOR, SpecVisibility.DEFAULT)
