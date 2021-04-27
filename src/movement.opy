@@ -1,90 +1,114 @@
 #!mainFile "mergev2.opy"
-  
 
-#The entire system should be refactored with an array of overriders so that longer ults for example won't get interrupted completely by a short movement
-rule "Movement Override: Overrider":
+subroutine requestMovement
+subroutine removeMovementRequest
+
+rule "Movement: Stacked - Overriding":
     @Event eachPlayer
 
-    #If we are overriding movement on a host
     @Condition eventPlayer.PlayerHost != null
-    @Condition eventPlayer.PlayerHost.MovementOverrider == eventPlayer
 
-    printLog("YEET THE PLAYER")
-    #Detach ourself
-    #eventPlayer.detach() #Moved to when the ability is triggered
+    @Condition eventPlayer.PlayerHost.MovementStack.last() == eventPlayer
+
+    #Detach ourself. This is also done when the player appends himself to the movementStack, but in case he gains back control after another override ended, he needs to be detached again
+    eventPlayer.detach()
+
+    #Wait, because we just detached from the host and they can not immediately attach to us
     wait(0.017)
 
     #Attach the host to us
     eventPlayer.PlayerHost.attachTo(eventPlayer, vect(0,0,0))
 
-    waitUntil(eventPlayer.PlayerHost.MovementOverrider != eventPlayer, 9999)
+    #Wait until we are no longer the Owner of Movement, or we have unmerged
+    waitUntil(eventPlayer.PlayerHost.MovementStack.last() != eventPlayer, 9999)
+
+    if eventPlayer.PlayerHost != null:
+        #Wait longer if the next movement owner is another player, because they need to wait after they detached, to attach the host to them
+        if eventPlayer.PlayerHost.MovementStack.last() == eventPlayer.PlayerHost:
+            wait(0.017)
+        else:
+            wait(0.035)
+
+        #Attach ourself back to the Host
+        eventPlayer.attachTo(eventPlayer.PlayerHost, vect(0,0,0))
 
 
-    #If there is no new movement Overrider, detach the host completely
-    if eventPlayer.PlayerHost.MovementOverrider == null:
-        eventPlayer.PlayerHost.detach()
-        wait(0.017)
-    else:
-        #If other player is new overrider, wait for them to attach the host to them
-        wait(0.034)
 
-    #Attach ourself back
-    eventPlayer.attachTo(eventPlayer.PlayerHost, vect(0,0,0))
-
-
-
-#!define ch (eventPlayer.getCurrentHero() if eventPlayer.getHeroOfDuplication() == 0 else eventPlayer.getHeroOfDuplication())
-
-rule "Movement: Stack - Ability 1":
+rule "Movement: Host - Overriding":
     @Event eachPlayer
 
-    @Condition eventPlayer.PlayerHost != null
+    @Condition len(eventPlayer.MovementStack) == 0 or eventPlayer.MovementStack.last() == eventPlayer
+    @Condition eventPlayer.PlayerHost == null
+
+    eventPlayer.detach()
+
+
+
+#!define isPartOfStack (eventPlayer.PlayerHost != null or (len(eventPlayer.StackedPlayers) > 0))
+#!define isMovementOwner ((eventPlayer.PlayerHost.MovementStack.last() == eventPlayer) if eventPlayer.PlayerHost != null else eventPlayer.MovementStack.last() == eventPlayer)
+#!define ch (eventPlayer.getCurrentHero() if eventPlayer.getHeroOfDuplication() == 0 else eventPlayer.getHeroOfDuplication())
+
+def requestMovement():
+    @Name "Movement: Request Movement Owner"
+    if eventPlayer.PlayerHost != null:
+        eventPlayer.PlayerHost.MovementStack = eventPlayer.PlayerHost.MovementStack.exclude(eventPlayer).concat(eventPlayer)
+    else:
+        eventPlayer.MovementStack = eventPlayer.MovementStack.exclude(eventPlayer).concat(eventPlayer)
+
+def removeMovementRequest():
+    @Name "Movement: Remove request for Movement Owner"
+    if eventPlayer.PlayerHost != null:
+        eventPlayer.PlayerHost.MovementStack.remove(eventPlayer)
+    else:
+        eventPlayer.MovementStack.remove(eventPlayer)
+
+
+rule "Movement: Ability 1":
+    @Event eachPlayer
+
+    #If we are part of a stack
+    #@Condition isPartOfStack
+
+    #If we are not already the movement owner
+    @Condition not isMovementOwner
+    
     @Condition eventPlayer.PlayerHost.BlockMovement == false
     @Condition eventPlayer.isUsingAbility1()
     @Condition eventPlayer.MergeTransitionAbilities == false
 
     @Condition ch == Hero.DOOMFIST or ch == Hero.DVA or ch == Hero.REINHARDT or ch == Hero.WINSTON or ch == Hero.ASHE or ch == Hero.ECHO or ch == Hero.GENJI or ch == Hero.MCCREE or ch == Hero.MERCY or ch == Hero.MOIRA or ch == Hero.PHARAH or ch == Hero.TRACER or ch == Hero.WIDOWMAKER
         
-    printLog("Ability 1")
+    requestMovement()
 
-    eventPlayer.PlayerHost.MovementOverrider = eventPlayer
+    if isPartOfStack:
+        if Debug:
+            printLog("{0} used Ability 1 while in a Stack".format(eventPlayer))
+            printLog("The new MovementStack is now: {0}".format(eventPlayer.MovementStack if eventPlayer.PlayerHost == null else eventPlayer.PlayerHost.MovementStack))
 
-    eventPlayer.detach()
+        eventPlayer.detach()
 
-    #Some Abilities have an instant effect and will not work when triggered while attached, so cancel and immediately retrigger them after detaching
-    if not ch == Hero.DVA:
-        #DVA sucks and doesn't like her cooldown being set immediately, luckily she doesn't need the ability restarted in the first place
-        eventPlayer.cancelPrimaryAction()
-        eventPlayer.setAbilityCooldown(Button.ABILITY_1, 0)
-        eventPlayer.forceButtonPress(Button.ABILITY_1)
+        #Some Abilities have an instant effect and will not work when triggered while attached, so cancel and immediately retrigger them after detaching
+        if not ch == Hero.DVA:
+            #DVA sucks and doesn't like her cooldown being set immediately, luckily she doesn't need the ability restarted in the first place
+            eventPlayer.cancelPrimaryAction()
+            eventPlayer.setAbilityCooldown(Button.ABILITY_1, 0)
+            eventPlayer.forceButtonPress(Button.ABILITY_1)
 
     waitUntil(not eventPlayer.isUsingAbility1(), 99999)
 
     #Keep control for a little longer for a better feel and less jerkyness
     wait(0.2)
 
-    if eventPlayer.PlayerHost.MovementOverrider == eventPlayer:
-        eventPlayer.PlayerHost.MovementOverrider = null
+    removeMovementRequest()
+
     
 
-rule "Movement: Host - Ability 1":
+
+rule "Movement: Ultimates":
     @Event eachPlayer
 
-    @Condition len(eventPlayer.StackedPlayers) > 0 
-    @Condition eventPlayer.PlayerHost.MovementOverrider != null
-    @Condition eventPlayer.isUsingAbility1()
+    @Condition not isMovementOwner
 
-    @Condition ch == Hero.DOOMFIST or ch == Hero.DVA or ch == Hero.REINHARDT or ch == Hero.WINSTON or ch == Hero.ASHE or ch == Hero.ECHO or ch == Hero.GENJI or ch == Hero.MCCREE or ch == Hero.MERCY or ch == Hero.MOIRA or ch == Hero.PHARAH or ch == Hero.TRACER or ch == Hero.WIDOWMAKER
-        
-    eventPlayer.MovementOverrider = null
-
-    printLog("Host: Ability 1")
-
-
-rule "Movement: Stack - Ultimates":
-    @Event eachPlayer
-
-    @Condition eventPlayer.PlayerHost != null
     @Condition eventPlayer.PlayerHost.BlockMovement == false
     @Condition eventPlayer.isUsingUltimate()
     @Condition eventPlayer.MergeTransitionAbilities == false
@@ -92,9 +116,9 @@ rule "Movement: Stack - Ultimates":
     #Doomfist is a little weird, look into that later...
     @Condition ch == Hero.SIGMA or ch == Hero.MERCY
 
-    printLog("Ultimate")
+    printLog("{0}: Used Ultimate while in a Stack".format(eventPlayer))
 
-    eventPlayer.PlayerHost.MovementOverrider = eventPlayer
+    requestMovement()
 
     eventPlayer.detach()
 
@@ -102,38 +126,49 @@ rule "Movement: Stack - Ultimates":
 
     wait(0.2)
 
-    if eventPlayer.PlayerHost.MovementOverrider == eventPlayer:
-        eventPlayer.PlayerHost.MovementOverrider = null
+    removeMovementRequest()
 
 
 
 
 
-rule "Detect Teleports":
+rule "Movement: Detect Teleports":
     @Event eachPlayer
     @Hero all
     
-    @Condition eventPlayer.PlayerHost != null
-    @Condition eventPlayer.PlayerHost.MovementOverrider != eventPlayer
-    #When the host is a certain distance away
-    @Condition distance(eventPlayer.getPosition(), eventPlayer.PlayerHost.getPosition()) > 1.1
+    @Condition isPartOfStack
 
-    #And maintains that distance over a short time, teleport the player
+    
+    #!define isHost (eventPlayer.PlayerHost == null)
+    #!define movOwner(stackOwner) (stackOwner.MovementStack.last() if len(stackOwner.MovementStack) > 0 else stackOwner)
+    #!define stackMovOwner (movOwner(eventPlayer) if isHost else movOwner(eventPlayer.PlayerHost))
+    
+    #When the movement Owner is a certain distance away
+    @Condition distance(eventPlayer.getPosition(), stackMovOwner) > 1.2
+    @Condition eventPlayer != stackMovOwner
+
+    
+
+    #And maintains that distance over a short time
     wait(0.1, Wait.ABORT_WHEN_FALSE)
 
+    
     #If the distance is small, wait longer to make sure it's not just jank
-    if distance(eventPlayer.getPosition(), eventPlayer.PlayerHost.getPosition()) < 2:
+    if distance(eventPlayer.getPosition(), stackMovOwner) < 7:
         wait(0.2, Wait.ABORT_WHEN_FALSE)
 
-    printLog("Teleport triggered by {0}".format(eventPlayer))
     if Debug:
+        printLog("Teleport triggered by {0}".format(eventPlayer))
         smallMessage(eventPlayer, "Debug: Teleport triggered, {0}".format("Blocked." if eventPlayer.PlayerHost.BlockMovement else "Teleported Host"))
 
-  
-    if eventPlayer.PlayerHost.BlockMovement == false:
-        eventPlayer.PlayerHost.teleport(eventPlayer.getPosition())
 
-    eventPlayer.attachTo(eventPlayer.PlayerHost, vect(0,0,0))
+    #Otherwise, teleport the overrider to us (if allowed) and attach us back to him
+
+
+    if eventPlayer.PlayerHost == null or (eventPlayer.PlayerHost != null and eventPlayer.PlayerHost.BlockMovement == false):
+        stackMovOwner.teleport(eventPlayer.getPosition())
+
+    eventPlayer.attachTo(stackMovOwner, vect(0,0,0))
   
 
 
@@ -146,7 +181,8 @@ rule "Attach to baby DVA":
     @Condition eventPlayer.PlayerHost.getCurrentHero() == Hero.DVA
     @Condition eventPlayer.PlayerHost.isInAlternateForm()
 
-    printLog("Reattached {0} to baby D.VA".format(eventPlayer))
+    if Debug:
+        printLog("Reattached {0} to baby D.VA ({1})".format(eventPlayer, eventPlayer.PlayerHost))
     eventPlayer.attachTo(eventPlayer.PlayerHost, vect(0,0,0))
 
 
@@ -154,19 +190,18 @@ rule "Movement: Doomfist Punch":
     @Event eachPlayer
     @Hero doomfist
 
-    @Condition eventPlayer.PlayerHost != null
+    @Condition not isMovementOwner
     @Condition eventPlayer.isFiringSecondaryFire()
 
     waitUntil(not eventPlayer.isFiringSecondaryFire(), 99999)
 
-    eventPlayer.PlayerHost.MovementOverrider = eventPlayer
+    requestMovement()
 
     eventPlayer.detach()
 
     wait(0.55)
 
-    if eventPlayer.PlayerHost.MovementOverrider == eventPlayer:
-        eventPlayer.PlayerHost.MovementOverrider = null
+    removeMovementRequest()
 
 
 
@@ -174,11 +209,12 @@ rule "Movement: Brigitte Shieldbash":
     @Event eachPlayer
     @Hero brigitte
 
-    @Condition eventPlayer.PlayerHost != null
+    @Condition not isMovementOwner
+
     @Condition eventPlayer.isFiringSecondaryFire()
     @Condition eventPlayer.isFiringPrimaryFire()
 
-    eventPlayer.PlayerHost.MovementOverrider = eventPlayer
+    requestMovement()
 
     eventPlayer.detach()
 
@@ -186,27 +222,35 @@ rule "Movement: Brigitte Shieldbash":
 
     wait(0.3)
 
-    if eventPlayer.PlayerHost.MovementOverrider == eventPlayer:
-        eventPlayer.PlayerHost.MovementOverrider = null
+    removeMovementRequest()
 
 
 rule "Movement: Ball Hook":
     @Event eachPlayer
     @Hero hammond
 
-    @Condition eventPlayer.PlayerHost != null
+    @Condition not isMovementOwner
+
     @Condition eventPlayer.isFiringSecondaryFire()
 
-    eventPlayer.PlayerHost.MovementOverrider = eventPlayer
+    requestMovement()
 
     eventPlayer.detach()
 
-    waitUntil(not eventPlayer.isFiringSecondaryFire(), 99999)
+    waitUntil(not eventPlayer.isFiringSecondaryFire() or not isMovementOwner, 99999)
+
+    #Force ball to remove his hook when he loses movement Owner 
+    if eventPlayer.isFiringSecondaryFire():
+        if Debug:
+            printLog("unattach ball hook")
+        smallMessage(eventPlayer, "Unattach")
+        eventPlayer.forceButtonPress(Button.SECONDARY_FIRE)
+        eventPlayer.setAbilityCooldown(Button.SECONDARY_FIRE, 2)
+        
 
     wait(0.3)
 
-    if eventPlayer.PlayerHost.MovementOverrider == eventPlayer:
-        eventPlayer.PlayerHost.MovementOverrider = null
+    removeMovementRequest()
 
     
 

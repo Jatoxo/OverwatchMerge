@@ -19,7 +19,7 @@ playervar MergedHud = [] # Hud for the player you are connected to
 playervar StackedHud = [] # Hud for the players connected to you
 playervar StackedIcons = [] # Icons of the players connected to you
 playervar PlayerStackIterator
-playervar MovementOverrider
+playervar MovementStack = [] #The stack of players who request control over the player stack 
 playervar RevealStack = false #Whether the hero stack is visible to the enemy
 
 
@@ -150,22 +150,22 @@ rule "Update Host Icons/Hud":
     @Condition eventPlayer.StackChanged > 0
     
     do:
-        if Debug:
+        if Debug and false:
             printLog("{0}: Redo Hud and Icons with new Stack".format(eventPlayer))
 
         #Remove all "Connected to you" texts
         while len(eventPlayer.StackedHud) > 0:
             destroyHudText(eventPlayer.StackedHud[0])
-            printLog("{0}: Destroyed \"Connected to you\" text ({1})".format(eventPlayer, eventPlayer.StackedHud[0]))
+            #printLog("{0}: Destroyed \"Connected to you\" text ({1})".format(eventPlayer, eventPlayer.StackedHud[0]))
             eventPlayer.StackedHud.remove(eventPlayer.StackedHud[0])
         
         #Remove all Icons on top
         while len(eventPlayer.StackedIcons) > 0:
             destroyInWorldText(eventPlayer.StackedIcons[0])
-            printLog("{0}: Destroyed Icon ({1})".format(eventPlayer, eventPlayer.StackedIcons[0]))
+            #printLog("{0}: Destroyed Icon ({1})".format(eventPlayer, eventPlayer.StackedIcons[0]))
             eventPlayer.StackedIcons.remove(eventPlayer.StackedIcons[0])
 
-        if Debug:
+        if Debug and false:
             printLog("{0}: Creating icons and hud for {1}".format(eventPlayer, eventPlayer.StackedPlayers if (len(eventPlayer.StackedPlayers) > 0) else "Noone"))
             
         if len(eventPlayer.StackedPlayers) > 0:
@@ -176,7 +176,7 @@ rule "Update Host Icons/Hud":
                 #Create "Connected to you" for every player
                 hudHeader(eventPlayer, "{0} {1} is connected to you".format(currentPlayer, heroIcon(currentPlayer.getCurrentHero())), HudPosition.LEFT, 0, Color.WHITE, HudReeval.NONE, SpecVisibility.DEFAULT)
                 eventPlayer.StackedHud.append(getLastCreatedText())
-                if Debug:
+                if Debug and false:
                     printLog("{0}: Appended \"connected to you\" text({1}) for {2} to array ".format(eventPlayer, eventPlayer.StackedHud.last(), currentPlayer))
 
                 #!define iconScale 2.5
@@ -184,7 +184,7 @@ rule "Update Host Icons/Hud":
                 createInWorldText(getAllPlayers() if eventPlayer.RevealStack else getPlayers(eventPlayer.getTeam()), heroIcon(currentPlayer.getCurrentHero()), updateEveryTick(eventPlayer.getPosition()) + vect(0, 2 + 0.3 * evalOnce(i), 0), iconScale, Clip.SURFACES, WorldTextReeval.VISIBILITY_AND_POSITION, Color.WHITE, SpecVisibility.DEFAULT)
                 eventPlayer.StackedIcons.append(getLastCreatedText())
                 
-                if Debug:
+                if Debug and false:
                     printLog("{0}: Appended Icon({1}) for {2} (Playing hero {3} {4}) to array ".format(eventPlayer, eventPlayer.StackedIcons.last(), currentPlayer, currentPlayer.getCurrentHero(), heroIcon(currentPlayer.getCurrentHero())))
     
         
