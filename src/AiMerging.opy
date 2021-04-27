@@ -24,7 +24,7 @@ rule "Ai: Detect AI":
         waitUntil(eventPlayer.isHoldingButton(Button.INTERACT), 4)
         if not eventPlayer.isHoldingButton(Button.INTERACT):
             eventPlayer.AiCheck = true
-            hudHeader(eventPlayer, "You are an AI", HudPosition.LEFT, 0, Color.YELLOW, HudReeval.NONE, SpecVisibility.ALWAYS)
+            hudHeader(eventPlayer, "You are an AI", HudPosition.LEFT, 0, Color.YELLOW, HudReeval.NONE, SpecVisibility.DEFAULT)
         else:
             eventPlayer.AiCheck = false
     else:
@@ -73,6 +73,7 @@ rule "Ai: Unmerging":
 
     while random.randint(0, 1) == 0
 
+    waitUntil(eventPlayer.isOnGround(), 9999)
     eventPlayer.startForcingButton(Button.CROUCH)
     wait(0.1)
     eventPlayer.stopForcingButton(Button.CROUCH)
