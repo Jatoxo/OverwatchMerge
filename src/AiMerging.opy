@@ -45,6 +45,8 @@ rule "Ai: Merging":
 
     @Condition eventPlayer.MergeTarget != null
 
+    wait(0.2, Wait.ABORT_WHEN_FALSE)
+
     if random.randint(0, 3) == 0:
         printLog("AI {0}: Merge with {1}".format(eventPlayer, eventPlayer.MergeTarget))
 
