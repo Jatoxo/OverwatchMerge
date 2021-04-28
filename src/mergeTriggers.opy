@@ -73,9 +73,15 @@ rule "Merge: Prevent merge when holding crouch when target is found..":
 def triggerMerge():
     @Name "TriggerMerge"
 
-    eventPlayer.cancelPrimaryAction()
+    #eventPlayer.cancelPrimaryAction()
 
     eventPlayer.PlayerHost = eventPlayer.MergeTarget
+
+    if len(eventPlayer.MovementStack) > 0:
+        #Wait so our movementstack is reattached to us
+        wait(0.04)
+        eventPlayer.PlayerHost.MovementStack.append(eventPlayer.MovementStack)
+        eventPlayer.MovementStack = []
 
     if Debug:
         printLog("{0}: Trigger merge with {1}".format(eventPlayer, eventPlayer.MergeTarget))
@@ -92,18 +98,18 @@ def triggerMerge():
 def triggerUnmerge():
     @Name "TriggerUnmerge"
 
-    if eventPlayer.PlayerHost.MovementOverrider == eventPlayer:
-        eventPlayer.PlayerHost.MovementOverrider = null
-        
-        #Wait to give time for the host to be unmerged before the stack is cleared and the rule doesn't trigger
-        wait(0.02)
-
+    
     if Debug:
         printLog("{0}: Trigger Unmerge from {1}".format(eventPlayer, eventPlayer.PlayerHost))
 
     eventPlayer.PlayerHost.StackedPlayers.remove(eventPlayer)
 
     eventPlayer.PlayerHost.StackChanged++
+
+    if eventPlayer in eventPlayer.PlayerHost.MovementStack:
+        eventPlayer.MovementStack = [eventPlayer]
+
+    eventPlayer.PlayerHost.MovementStack.remove(eventPlayer)
 
     eventPlayer.PlayerHost = null
 

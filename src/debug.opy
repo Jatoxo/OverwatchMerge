@@ -5,12 +5,12 @@ rule "Debug":
     @Hero all
     
     @Condition Debug
-    @Condition len(eventPlayer.AiCheck) != 2
-    @Condition eventPlayer.AiCheck == false
+    @Condition len(eventPlayer.AiCheck) != 2 or not EnableAi
+    @Condition eventPlayer.AiCheck == false or not EnableAi
 
 
     hudHeader(eventPlayer, "Server Load: {0} %".format(getAverageServerLoad()), HudPosition.RIGHT, 0, rgb(255 * (getAverageServerLoad() / 100), 255 * (1 - getAverageServerLoad() / 100), 0), HudReeval.STRING_AND_COLOR, SpecVisibility.DEFAULT)
-    hudHeader(eventPlayer, "Debug Mode is Acive!", HudPosition.RIGHT, 0, Color.YELLOW, HudReeval.STRING_AND_COLOR, SpecVisibility.DEFAULT)
+    hudHeader(eventPlayer, "Debug Mode is Active!", HudPosition.RIGHT, 0, Color.YELLOW, HudReeval.STRING_AND_COLOR, SpecVisibility.DEFAULT)
 
 
     if eventPlayer == hostPlayer:
@@ -22,8 +22,8 @@ rule "Debug":
         hudHeader(eventPlayer, "Using Ultimate: {0}".format(eventPlayer.isUsingUltimate()), HudPosition.LEFT, 0, Color.WHITE, HudReeval.VISIBILITY_STRING_AND_COLOR, SpecVisibility.DEFAULT)
 
         hudHeader(eventPlayer, "PlayerHost: {0}".format(eventPlayer.PlayerHost), HudPosition.TOP, 0, Color.WHITE, HudReeval.STRING, SpecVisibility.DEFAULT)
-        hudHeader(eventPlayer, "PlayerHost Overrider: {0}".format(eventPlayer.PlayerHost.MovementOverrider), HudPosition.TOP, 0, Color.WHITE, HudReeval.STRING, SpecVisibility.DEFAULT)
-        hudHeader(eventPlayer, "Own Overrider: {0}".format(eventPlayer.MovementOverrider), HudPosition.TOP, 0, Color.WHITE, HudReeval.STRING, SpecVisibility.DEFAULT)
+        hudHeader(eventPlayer, "PlayerHost MovementOwner: {0}".format(eventPlayer.PlayerHost.MovementStack.last()), HudPosition.TOP, 0, Color.WHITE, HudReeval.STRING, SpecVisibility.DEFAULT)
+        hudHeader(eventPlayer, "Own MovementOwner: {0}".format(eventPlayer.MovementStack.last()), HudPosition.TOP, 0, Color.WHITE, HudReeval.STRING, SpecVisibility.DEFAULT)
 
         hudHeader(eventPlayer, "Host Distance: {0}".format(distance(eventPlayer.getPosition(), eventPlayer.PlayerHost.getPosition())), HudPosition.TOP, 0, Color.WHITE, HudReeval.STRING, SpecVisibility.DEFAULT)
 
