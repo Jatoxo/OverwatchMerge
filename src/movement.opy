@@ -166,7 +166,11 @@ rule "Movement: Detect Teleports":
 
 
     if eventPlayer.PlayerHost == null or (eventPlayer.PlayerHost != null and eventPlayer.PlayerHost.BlockMovement == false):
+        if stackMovOwner.getCurrentHero() == Hero.HAMMOND:
+            eventPlayer.forceButtonPress(Button.SECONDARY_FIRE)
+            eventPlayer.setAbilityCooldown(Button.SECONDARY_FIRE, 2)
         stackMovOwner.teleport(eventPlayer.getPosition())
+
 
     eventPlayer.attachTo(stackMovOwner, vect(0,0,0))
   
