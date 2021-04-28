@@ -42,6 +42,7 @@ rule "Match initialization":
         #Skips the hero assembly phase because it's annoying for debugging 
         setMatchTime(0)
 
+#!include "statusInheritance.opy"
 
 #!include "targeting.opy"
 
